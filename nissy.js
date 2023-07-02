@@ -68,6 +68,71 @@ async function genAltScramble(scramble) {
   return inverse(solution)
 }
 
+function genScramble({
+  len,
+  allFaces,
+  quarterTurns,
+  parallelFaces,
+  maxQuarterTurns,
+}) {
+  allFaces = allFaces || ['F', 'B', 'R', 'L', 'U', 'D'];
+  quarterTurns = quarterTurns || allFaces;
+  parallelFaces = parallelFaces || [
+    ['U', 'D'],
+    ['F', 'B'],
+    ['R', 'L'],
+  ]
+  maxQuarterTurns = maxQuarterTurns || 0
+  len = len || 25
+
+  function _isParallel(face1, face2) {
+    return Boolean(
+      parallelFaces.find(
+        ([f1, f2]) => (
+          (face1 == f1 && face2 == f2) 
+            || (face1 == f2 && face2 == f1)
+        )
+      )
+    )
+  }
+
+  function _getTurn(face, onlyHalfTurns) {
+    if (onlyHalfTurns || !quarterTurns.includes(face)) {
+      return `${face}2`
+    }
+
+    const turn = ['', `'`, '2'][Math.floor(Math.random() * 3)]
+
+    return `${face}${turn}`
+  }
+
+  function _isQuarterTurn(move) {
+    return !move.endsWith('2')
+  }
+
+  const scramble = []
+  const faces = []
+  let qtCounter = maxQuarterTurns || len
+
+  for (let i = scramble.length; i < len; i++) {
+    const [f1, f2] = faces.slice(-2)
+
+    const excludeFaces = faces.length < 2 ? [f1] : (_isParallel(f1, f2) ? [f1, f2] : [f2])
+    const possibleFaces = allFaces.filter(x => !excludeFaces.includes(x))
+
+    const nextFace = possibleFaces[Math.floor(Math.random() * possibleFaces.length)]
+    faces.push(nextFace)
+
+    const nextTurn = _getTurn(nextFace, qtCounter == 0)
+    if (qtCounter > 0 && _isQuarterTurn(nextTurn)) {
+      qtCounter = qtCounter - 1;
+    }
+    scramble.push(nextTurn)
+  }
+
+  return scramble.join(' ')
+}
+
 module.exports = {
   runNissy,
   getDROptimalLength,
@@ -75,5 +140,6 @@ module.exports = {
 
   solve,
   inverse,
-  genAltScramble
+  genScramble,
+  genAltScramble,
 }
