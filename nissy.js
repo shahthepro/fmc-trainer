@@ -36,7 +36,7 @@ async function getDROptimalLength(scramble) {
 
 async function getAllDRSolutions(scramble, maxLen) {
   maxLen = maxLen || (await getDROptimalLength(scramble))
-  const solutions = await runNissy("dr", scramble, { maxLen })
+  const solutions = await runNissy("drud-eofb", scramble, { maxLen })
 
   return solutions
 }
@@ -62,10 +62,40 @@ function inverse(scramble) {
   return inverseScramble.reverse().join(" ")
 }
 
-async function genAltScramble(scramble) {
-  const solution = await solve(scramble)
+async function genAltScramble(scramble, randomOrientation) {
+  let orientation 
+  if (randomOrientation) {
+    const o = [
+      ["", "", "F/B"],
+      ["x", "x'", "U/D"],
+      ["x2", "x2", "F/B"],
+      ["y", "y'", "R/L"],
+      ["y2", "y2", "F/B"],
+      ["z", "z'", "F/B"],
+      ["x y", "y' x'", "R/L"],
+      ["y z", "z' y'", "R/L"],
+      ["z y", "y' z'", "U/D"],
+    ]
 
-  return inverse(solution)
+    const [premove, postmove, eo_face] = o[Math.floor(Math.random() * o.length)]
+
+    orientation = eo_face
+    
+    if (premove.length) {
+      scramble = `${premove} ${scramble} ${postmove}`
+    }
+  }
+
+  const solution = inverse(await solve(scramble))
+
+  if (randomOrientation) {
+    return {
+      scramble: solution,
+      orientation
+    }
+  }
+
+  return solution
 }
 
 function genScramble({
